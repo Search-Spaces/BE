@@ -9,8 +9,6 @@ spring:
         default_batch_fetch_size: 100
     open-in-view: true
 
-
-
 springdoc:
   packages-to-scan: nomad.searchspace.domain
   default-consumes-media-type: application/json;
