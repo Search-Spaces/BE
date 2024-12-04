@@ -25,6 +25,4 @@ public class Likes {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id", nullable = false, updatable = false, insertable = false)
     private Member member;
-
-
 }
