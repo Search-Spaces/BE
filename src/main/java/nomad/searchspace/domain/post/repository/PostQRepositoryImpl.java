@@ -14,7 +14,7 @@ import nomad.searchspace.domain.post.entity.QPostImage;
 
 
 import java.util.List;
-import java.util.Optional;
+
 
 
 @RequiredArgsConstructor
@@ -24,9 +24,9 @@ public class PostQRepositoryImpl implements PostQRepository {
     QPostImage postImage = QPostImage.postImage;
 
     @Override
-    public List<Post> findByCussor(PostRequest request, int lastLikes, double lastDistance) {
+    public List<Post> findByCussor(PostRequest request, int lastLike, double lastDistance) {
         OrderSpecifier<?> orderBy = getOrderBy(request);
-        BooleanBuilder whereClause = getWhereClause(request, lastLikes, lastDistance);
+        BooleanBuilder whereClause = getWhereClause(request, lastLike, lastDistance);
         return queryFactory
                 .select(post)
                 .from(post)
@@ -54,7 +54,7 @@ public class PostQRepositoryImpl implements PostQRepository {
             ).asc(); // 거리 순 오름차순
         } else if (request.getOrderBy() == OrderBy.RECOMMENDED) {
             // 추천순 정렬 (likeCount 기준)
-            orderBy = post.likeCount.desc();
+            orderBy = post.likes.size().desc();
         } else if (request.getOrderBy() == OrderBy.REVIEW) {
             //리뷰순 정렬 (리뷰 완료후 추가 예정)
         }
@@ -62,9 +62,12 @@ public class PostQRepositoryImpl implements PostQRepository {
     }
     
     //검색조건 가져오기
-    private BooleanBuilder getWhereClause(PostRequest request, int lastLikes, double lastDistance) {
+    private BooleanBuilder getWhereClause(PostRequest request, int lastLike, double lastDistance) {
         BooleanBuilder whereClause = new BooleanBuilder();
-        whereClause.and(post.postId.ne(request.getPostId())); // 동일 ID 제외
+
+        // 동일 ID 제외
+        whereClause.and(post.postId.ne(request.getPostId()));
+
         // 키워드 검색 조건
         if (request.getKeyword() != null && !request.getKeyword().isBlank()) {
             whereClause.and(post.title.containsIgnoreCase(request.getKeyword()));
@@ -84,7 +87,7 @@ public class PostQRepositoryImpl implements PostQRepository {
         //추천순 커서 조건
         if (request.getOrderBy() == OrderBy.RECOMMENDED){
             whereClause.and(
-                    post.likeCount.lt(lastLikes).or(post.likeCount.eq(lastLikes).and(post.postId.gt(request.getPostId())))
+                    post.likes.size().lt(lastLike).or(post.likes.size().eq(lastLike).and(post.postId.gt(request.getPostId())))
             );
         // 거리순 커서 조건
         }else if (request.getOrderBy() == OrderBy.DISTANCE && request.getUserLocation() != null) {

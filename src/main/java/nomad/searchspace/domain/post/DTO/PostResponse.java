@@ -23,9 +23,11 @@ public class PostResponse {
     private boolean copyright;
     private boolean approval;
     private int likeCount;
+    private boolean userLiked;
 
     private boolean isOpen;
     private double distance;
+
 
     private List<PostImageDTO> images;
 }

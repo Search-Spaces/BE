@@ -14,12 +14,12 @@ public class PostImage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long postImageId;
 
-    @Column(length = 255)
+    @Column(length = 250)
     private String imageUrl;
-    @Column(length = 255) //이미지 설명
+    @Column(length = 250) //이미지 설명
     private String description;
 
     @ManyToOne
-    @JoinColumn(name = "postId", nullable = false)
+    @JoinColumn(name = "postId", nullable = false, updatable = false, insertable = false)
     private Post post;
 }
