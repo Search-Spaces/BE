@@ -1,12 +1,16 @@
 package nomad.searchspace.domain.post.service;
 
 import lombok.RequiredArgsConstructor;
+import nomad.searchspace.domain.like.repository.LikeRepository;
+import nomad.searchspace.domain.member.domain.Member;
+import nomad.searchspace.domain.member.repository.MemberRepository;
 import nomad.searchspace.domain.post.DTO.PostDTO;
 import nomad.searchspace.domain.post.DTO.PostMapper;
 import nomad.searchspace.domain.post.DTO.PostRequest;
 import nomad.searchspace.domain.post.DTO.PostResponse;
 import nomad.searchspace.domain.post.entity.Post;
 import nomad.searchspace.domain.post.repository.PostRepository;
+import nomad.searchspace.global.auth.PrincipalDetails;
 import nomad.searchspace.global.exception.ApiException;
 import nomad.searchspace.global.exception.ErrorCode;
 
@@ -41,6 +45,8 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final PostMapper mapper;
+    private final LikeRepository likeRepository;
+    private final MemberRepository memberRepository;
 
     @Value("${KAKAO_SECRET}")
     private String KAKAO_SECRET;
@@ -60,20 +66,28 @@ public class PostService {
         post.setLatitude(GEOCode[0]);
         post.setLongitude(GEOCode[1]);
         post = postRepository.save(post);
-        return mapper.toResponse(post);
+        return mapper.toResponse(post, false);
     }
 
     //특정 id로 상세정보 가져오기 + 이미지 부분 추가 필요
-    public PostResponse getPost(Long postId) {
+    public PostResponse getPost(Long postId, PrincipalDetails principalDetails) {
         //정보가 없을시 예외 반환
+        Member member = memberRepository.findByEmail(principalDetails.getMember().getEmail())
+                .orElseThrow(() -> new ApiException(ErrorCode.MEMBER_NOW_FOUND));
         Post post = postRepository.findById(postId).orElseThrow(()->new ApiException(ErrorCode.SPACE_NOT_FOUND));
-        return mapper.toResponse(post);
+
+        boolean userLiked = likeRepository.existsByPostAndMember(post, member);
+
+        return mapper.toResponse(post, userLiked);
     }
 
     //전체 리스트 가져오기(페이지) + 이미지 관련 추가 필요
-    public Page<PostResponse> getPostList(int page, String keyword) {
+    public Page<PostResponse> getPostList(int page, String keyword, PrincipalDetails principalDetails) {
+        Member member = memberRepository.findByEmail(principalDetails.getMember().getEmail())
+                .orElseThrow(() -> new ApiException(ErrorCode.MEMBER_NOW_FOUND));
         Pageable pageable = PageRequest.of(page - 1, 10); // 페이지 번호와 크기 지정
         Page<Post> posts;
+
         if (keyword != null && !keyword.isBlank()) {
             // 키워드 검색
             posts = postRepository.findByTitleContainingIgnoreCase(pageable, keyword);
@@ -81,16 +95,22 @@ public class PostService {
             // 키워드가 없으면 전체 게시물 조회
             posts = postRepository.findAll(pageable);
         }
+
         //정보 없을시 예외 반환
         if (posts.isEmpty()) {
             throw new ApiException(ErrorCode.SPACE_NOT_FOUND);
         }
 
-        return  posts.map(mapper :: toResponse);
+        return posts.map(post -> {
+            boolean userLiked = likeRepository.existsByPostAndMember(post, member);
+            return mapper.toResponse(post, userLiked);
+        });
     }
 
     //전체 리스트 가져오기(커서기반) + 이미지 및 리뷰순 관련 수정 필요
-    public List<PostResponse> getPostsByCursor(PostRequest request){
+    public List<PostResponse> getPostsByCursor(PostRequest request, PrincipalDetails principalDetails){
+        Member member = memberRepository.findByEmail(principalDetails.getMember().getEmail())
+                .orElseThrow(() -> new ApiException(ErrorCode.MEMBER_NOW_FOUND));
         Post lastPost;
         int lastLikes = 0;
         double lastDistance = 0.0;
@@ -98,7 +118,7 @@ public class PostService {
         
         if(request.getPostId()!=null && request.getPostId()>0){
             lastPost = postRepository.findById(request.getPostId()).orElseThrow(()->new ApiException(ErrorCode.SPACE_NOT_FOUND));
-            lastLikes = lastPost.getLikeCount(); //마지막 게시물의 좋아요수 가져오기
+            lastLikes = lastPost.getLikes().size(); //마지막 게시물의 좋아요수 가져오기
             lastDistance = calculateDistance(userLocation, lastPost);// 마지막 사용자와의 거리 가져오기
         }else{
             request.setPostId(0L);
@@ -119,7 +139,8 @@ public class PostService {
                     String sortedHours = getSortedBusinessHours(post);// 정렬된 영업시간
                     boolean isCurrentlyOpen = calculateIsOpen(post);// 현재 영업 여부 확인
                     double distance = calculateDistance(userLocation, post);
-                    PostResponse response = mapper.toResponse(post);
+                    boolean userLiked = likeRepository.existsByPostAndMember(post, member);
+                    PostResponse response = mapper.toResponse(post, userLiked);
                     response.setDistance(distance);
                     response.setBusinessHours(sortedHours);
                     response.setOpen(isCurrentlyOpen);
