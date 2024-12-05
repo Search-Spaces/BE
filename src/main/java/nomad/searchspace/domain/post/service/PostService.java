@@ -71,20 +71,32 @@ public class PostService {
 
     //특정 id로 상세정보 가져오기 + 이미지 부분 추가 필요
     public PostResponse getPost(Long postId, PrincipalDetails principalDetails) {
-        //정보가 없을시 예외 반환
-        Member member = memberRepository.findByEmail(principalDetails.getMember().getEmail())
-                .orElseThrow(() -> new ApiException(ErrorCode.MEMBER_NOW_FOUND));
         Post post = postRepository.findById(postId).orElseThrow(()->new ApiException(ErrorCode.SPACE_NOT_FOUND));
-
-        boolean userLiked = likeRepository.existsByPostAndMember(post, member);
+        boolean userLiked=false;
+        // PrincipalDetails가 null인지 확인
+        if (principalDetails == null) {
+            return mapper.toResponse(post, userLiked);
+        }else{
+            //정보가 없을시 예외 반환
+            Member member = memberRepository.findByEmail(principalDetails.getMember().getEmail())
+                    .orElseThrow(() -> new ApiException(ErrorCode.MEMBER_NOW_FOUND));
+            userLiked = likeRepository.existsByPostAndMember(post, member);
+        }
 
         return mapper.toResponse(post, userLiked);
     }
 
     //전체 리스트 가져오기(페이지) + 이미지 관련 추가 필요
     public Page<PostResponse> getPostList(int page, String keyword, PrincipalDetails principalDetails) {
-        Member member = memberRepository.findByEmail(principalDetails.getMember().getEmail())
-                .orElseThrow(() -> new ApiException(ErrorCode.MEMBER_NOW_FOUND));
+        Member member;
+        if (principalDetails != null) {
+            member = memberRepository.findByEmail(principalDetails.getMember().getEmail())
+                    .orElse(null);
+        } else {
+            member = null;
+        }
+
+
         Pageable pageable = PageRequest.of(page - 1, 10); // 페이지 번호와 크기 지정
         Page<Post> posts;
 
@@ -102,16 +114,23 @@ public class PostService {
         }
 
         return posts.map(post -> {
-            boolean userLiked = likeRepository.existsByPostAndMember(post, member);
+            // 회원 정보가 있는 경우 좋아요 여부 확인, 없으면 false
+            boolean userLiked = member != null && likeRepository.existsByPostAndMember(post, member);
             return mapper.toResponse(post, userLiked);
         });
     }
 
     //전체 리스트 가져오기(커서기반) + 이미지 및 리뷰순 관련 수정 필요
     public List<PostResponse> getPostsByCursor(PostRequest request, PrincipalDetails principalDetails){
-        Member member = memberRepository.findByEmail(principalDetails.getMember().getEmail())
-                .orElseThrow(() -> new ApiException(ErrorCode.MEMBER_NOW_FOUND));
         Post lastPost;
+        Member member;
+        if (principalDetails != null) {
+            member = memberRepository.findByEmail(principalDetails.getMember().getEmail())
+                    .orElse(null);
+        } else {
+            member = null;
+        }
+
         int lastLikes = 0;
         double lastDistance = 0.0;
         double[] userLocation = request.getUserLocation(); //유저 위치정보 가져오기
@@ -123,7 +142,6 @@ public class PostService {
         }else{
             request.setPostId(0L);
         }
-
 
         Boolean isOpen = request.getIsOpen(); //영업정보 가져오기
 
@@ -139,11 +157,14 @@ public class PostService {
                     String sortedHours = getSortedBusinessHours(post);// 정렬된 영업시간
                     boolean isCurrentlyOpen = calculateIsOpen(post);// 현재 영업 여부 확인
                     double distance = calculateDistance(userLocation, post);
-                    boolean userLiked = likeRepository.existsByPostAndMember(post, member);
+                    boolean userLiked = member != null && likeRepository.existsByPostAndMember(post, member);
+
                     PostResponse response = mapper.toResponse(post, userLiked);
+
                     response.setDistance(distance);
                     response.setBusinessHours(sortedHours);
                     response.setOpen(isCurrentlyOpen);
+
                     return response;
                 })
                 .filter(response -> isOpen == null || !isOpen || response.isOpen())// isOpen 인자가 true일 경우, 영업 중인 포스트만 필터링
