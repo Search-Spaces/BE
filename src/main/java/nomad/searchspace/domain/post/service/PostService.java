@@ -52,8 +52,8 @@ public class PostService {
     private final PostImageRepository postImageRepository;
 
 
-    @Value("${KAKAO_SECRET}")
-    private String KAKAO_SECRET;
+    @Value("${KAKAO_CLIENT}")
+    private String KAKAO_CLIENT;
 
 
     //게시물 생성 요청 + 이미지 부분 추가 필요
@@ -311,7 +311,7 @@ public class PostService {
         URL url = new URL(urlBuilder.toString());
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("GET");
-        conn.setRequestProperty("Authorization","KakaoAK "+KAKAO_SECRET);
+        conn.setRequestProperty("Authorization","KakaoAK "+KAKAO_CLIENT);
         conn.setRequestProperty("Content-type", "application/json");
         int responseCode = conn.getResponseCode();
 
