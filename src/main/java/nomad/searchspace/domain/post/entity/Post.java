@@ -10,7 +10,6 @@ import java.util.List;
 @Entity
 @Getter
 @Setter
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Post {
@@ -62,4 +61,21 @@ public class Post {
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PostImage> images;
 
+    @Builder
+    public Post(String title, String content, String address, PostType type, double latitude,
+                double longitude, String phoneNumber, String businessHours, String holidays,
+                String url, boolean copyright, boolean approval) {
+        this.title = title;
+        this.content = content;
+        this.address = address;
+        this.type = type;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.phoneNumber = phoneNumber;
+        this.businessHours = businessHours;
+        this.holidays = holidays;
+        this.url = url;
+        this.copyright = copyright;
+        this.approval = approval;
+    }
 }

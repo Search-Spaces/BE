@@ -6,7 +6,6 @@ import lombok.*;
 @Entity
 @Getter
 @Setter
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class PostImage {
@@ -19,7 +18,14 @@ public class PostImage {
     @Column(length = 250) //이미지 설명
     private String description;
 
-    @ManyToOne
-    @JoinColumn(name = "postId", nullable = false, updatable = false, insertable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "postId", nullable = false)
     private Post post;
+
+    @Builder
+    public PostImage(String imageUrl, String description, Post post) {
+        this.imageUrl = imageUrl;
+        this.description = description;
+        this.post = post;
+    }
 }

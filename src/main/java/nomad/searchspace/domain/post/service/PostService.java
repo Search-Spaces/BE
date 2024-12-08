@@ -4,17 +4,17 @@ import lombok.RequiredArgsConstructor;
 import nomad.searchspace.domain.like.repository.LikeRepository;
 import nomad.searchspace.domain.member.domain.Member;
 import nomad.searchspace.domain.member.repository.MemberRepository;
-import nomad.searchspace.domain.post.DTO.PostDTO;
-import nomad.searchspace.domain.post.DTO.PostMapper;
-import nomad.searchspace.domain.post.DTO.PostRequest;
-import nomad.searchspace.domain.post.DTO.PostResponse;
+import nomad.searchspace.domain.post.DTO.*;
 import nomad.searchspace.domain.post.entity.Post;
+import nomad.searchspace.domain.post.entity.PostImage;
+import nomad.searchspace.domain.post.repository.PostImageRepository;
 import nomad.searchspace.domain.post.repository.PostRepository;
 import nomad.searchspace.global.auth.PrincipalDetails;
 import nomad.searchspace.global.exception.ApiException;
 import nomad.searchspace.global.exception.ErrorCode;
 
 
+import nomad.searchspace.global.service.S3Service;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -24,6 +24,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -47,14 +48,18 @@ public class PostService {
     private final PostMapper mapper;
     private final LikeRepository likeRepository;
     private final MemberRepository memberRepository;
+    private final S3Service s3Service;
+    private final PostImageRepository postImageRepository;
+
 
     @Value("${KAKAO_SECRET}")
     private String KAKAO_SECRET;
 
 
     //게시물 생성 요청 + 이미지 부분 추가 필요
-    public PostResponse create(PostDTO dto) throws IOException, ParseException {
+    public PostResponse create(PostDTO dto, List<MultipartFile> images) throws IOException, ParseException {
         Post post = mapper.toEntity(dto);
+
         // 주소에서 위도와 경도 가져오기
         double[] GEOCode;
         try {
@@ -65,14 +70,35 @@ public class PostService {
         }
         post.setLatitude(GEOCode[0]);
         post.setLongitude(GEOCode[1]);
+
         post = postRepository.save(post);
+
+        // 2. 이미지 업로드
+        List<PostImage> postImages = new ArrayList<>();
+        int count = 1;
+        for (MultipartFile image : images) {
+            String imageUrl = s3Service.upload(image);
+
+            PostImage postImage = PostImage.builder()
+                    .imageUrl(imageUrl)
+                    .description(post.getTitle() + "사진" + (count++))
+                    .post(post)
+                    .build();
+            postImages.add(postImage);
+        }
+
+        postImageRepository.saveAll(postImages);
+
+        post.setImages(postImages);
+
         return mapper.toResponse(post, false);
     }
 
-    //특정 id로 상세정보 가져오기 + 이미지 부분 추가 필요
+    //특정 id로 상세정보 가져오기
     public PostResponse getPost(Long postId, PrincipalDetails principalDetails) {
         Post post = postRepository.findById(postId).orElseThrow(()->new ApiException(ErrorCode.SPACE_NOT_FOUND));
         boolean userLiked=false;
+
         // PrincipalDetails가 null인지 확인
         if (principalDetails == null) {
             return mapper.toResponse(post, userLiked);
@@ -82,11 +108,14 @@ public class PostService {
                     .orElseThrow(() -> new ApiException(ErrorCode.MEMBER_NOW_FOUND));
             userLiked = likeRepository.existsByPostAndMember(post, member);
         }
+        //이미지 가져오기
+        List<PostImage> postImages = postImageRepository.findByPostPostId(postId);
+        post.setImages(postImages);
 
         return mapper.toResponse(post, userLiked);
     }
 
-    //전체 리스트 가져오기(페이지) + 이미지 관련 추가 필요
+    //전체 리스트 가져오기(페이지)
     public Page<PostResponse> getPostList(int page, String keyword, PrincipalDetails principalDetails) {
         Member member;
         if (principalDetails != null) {
@@ -116,11 +145,15 @@ public class PostService {
         return posts.map(post -> {
             // 회원 정보가 있는 경우 좋아요 여부 확인, 없으면 false
             boolean userLiked = member != null && likeRepository.existsByPostAndMember(post, member);
+            //이미지 가져오기
+            List<PostImage> postImages = postImageRepository.findByPostPostId(post.getPostId());
+            post.setImages(postImages);
+
             return mapper.toResponse(post, userLiked);
         });
     }
 
-    //전체 리스트 가져오기(커서기반) + 이미지 및 리뷰순 관련 수정 필요
+    //전체 리스트 가져오기(커서기반)
     public List<PostResponse> getPostsByCursor(PostRequest request, PrincipalDetails principalDetails){
         Post lastPost;
         Member member;
@@ -158,6 +191,9 @@ public class PostService {
                     boolean isCurrentlyOpen = calculateIsOpen(post);// 현재 영업 여부 확인
                     double distance = calculateDistance(userLocation, post);
                     boolean userLiked = member != null && likeRepository.existsByPostAndMember(post, member);
+                    //이미지 가져오기
+                    List<PostImage> postImages = postImageRepository.findByPostPostId(post.getPostId());
+                    post.setImages(postImages);
 
                     PostResponse response = mapper.toResponse(post, userLiked);
 
@@ -275,7 +311,7 @@ public class PostService {
         URL url = new URL(urlBuilder.toString());
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("GET");
-        conn.setRequestProperty("Authorization","KakaoAK "+KAKAO_SECRET); // 서비스키 나중에 환경변수 처리
+        conn.setRequestProperty("Authorization","KakaoAK "+KAKAO_SECRET);
         conn.setRequestProperty("Content-type", "application/json");
         int responseCode = conn.getResponseCode();
 

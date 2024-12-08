@@ -5,8 +5,7 @@ import lombok.Data;
 
 @Data
 @Builder
-public class PostImageDTO {
-    private Long id;
+public class PostImageResponse {
     private String url;
     private String description;
 }
