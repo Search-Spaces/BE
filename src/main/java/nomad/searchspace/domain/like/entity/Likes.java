@@ -9,7 +9,6 @@ import nomad.searchspace.domain.post.entity.Post;
 @Entity
 @Getter
 @Setter
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Likes {
@@ -19,10 +18,16 @@ public class Likes {
     private Long likeId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "postId", nullable = false, updatable = false, insertable = false)
+    @JoinColumn(name = "postId", nullable = false)
     private Post post;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id", nullable = false, updatable = false, insertable = false)
+    @JoinColumn(name = "id", nullable = false)
     private Member member;
+
+    @Builder
+    public Likes(Post post, Member member) {
+        this.post = post;
+        this.member = member;
+    }
 }

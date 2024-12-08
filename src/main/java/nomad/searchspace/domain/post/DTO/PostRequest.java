@@ -2,7 +2,6 @@ package nomad.searchspace.domain.post.DTO;
 
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import nomad.searchspace.domain.post.entity.PostType;
 
 @Data

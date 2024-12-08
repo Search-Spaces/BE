@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.lang.Nullable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
@@ -53,8 +54,8 @@ public class PostController {
     //게시물 생성
     @Operation(summary = "게시물 생성 요청", description = "게시물 생성을 요청하는 api입니다.")
     @PostMapping(value = "/createPost", consumes = "multipart/form-data")
-    public ResponseEntity<PostResponse> createPost(@RequestPart PostDTO dto) throws IOException, ParseException {
-        PostResponse response = service.create(dto);
+    public ResponseEntity<PostResponse> createPost(@RequestPart PostDTO dto, @RequestPart List<MultipartFile> images) throws IOException, ParseException {
+        PostResponse response = service.create(dto, images);
         return ResponseEntity.ok(response);
     }
 

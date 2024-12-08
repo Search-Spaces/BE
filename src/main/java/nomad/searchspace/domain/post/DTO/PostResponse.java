@@ -2,6 +2,7 @@ package nomad.searchspace.domain.post.DTO;
 
 import lombok.Builder;
 import lombok.Data;
+import nomad.searchspace.domain.post.entity.PostImage;
 import nomad.searchspace.domain.post.entity.PostType;
 
 import java.util.List;
@@ -29,5 +30,5 @@ public class PostResponse {
     private double distance;
 
 
-    private List<PostImageDTO> images;
+    private List<PostImageResponse> images;
 }
