@@ -1,6 +1,7 @@
 package nomad.searchspace.domain.member.domain;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 import nomad.searchspace.domain.BaseTimeEntity;
 
@@ -12,7 +13,8 @@ public class Member extends BaseTimeEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true)
+    @NotBlank(message = "이메일은 필수입니다.")
+    @Column(unique = true, nullable = false)
     private String email;
 
     @Setter
