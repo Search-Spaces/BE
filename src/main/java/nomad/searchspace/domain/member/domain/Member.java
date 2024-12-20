@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 import nomad.searchspace.domain.BaseTimeEntity;
+import nomad.searchspace.domain.like.entity.Likes;
+
+import java.util.List;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -36,6 +39,10 @@ public class Member extends BaseTimeEntity {
     private String phoneNumber;
 
     private String role;
+
+    @Setter
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Likes> likes;
 
     @Builder
     private Member(String password, String email,  String nickname, Boolean gender, String birth, String phoneNumber, String role) {
