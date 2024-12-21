@@ -71,7 +71,7 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         // 사용자명과 권한을 accessToken에서 추출
-        String userEmail = jwtUtil.getUserEmail(originToken);
+        String userEmail = jwtUtil.getMemberEmail(originToken);
 
 //        Member member = memberRepository.findByEmail(userEmail).orElseThrow(() -> new ApiException(ErrorCode.MEMBER_NOW_FOUND));
 //        PrincipalDetails principalDetails = new PrincipalDetails(member, null, member.getKakaoId());
