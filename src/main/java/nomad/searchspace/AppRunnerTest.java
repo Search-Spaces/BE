@@ -26,6 +26,7 @@ public class AppRunnerTest implements ApplicationRunner {
         System.out.println("Server Port : " + environment.getProperty("server.port"));
         System.out.println("Default Property : " + environment.getProperty("default.string"));
         System.out.println("Common Property : " + environment.getProperty("common.string"));
+        System.out.println("redis port : " + environment.getProperty("spring.data.redis.port"));
         System.out.println("====================================================");
     }
 }
