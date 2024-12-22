@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "SearchSpaces"  // Docker 이미지 이름
+        IMAGE_NAME = "searchspaces"  // Docker 이미지 이름
         DOCKER_COMPOSE_FILE = "docker-compose.yml"  // docker-compose 파일 경로
     }
 
