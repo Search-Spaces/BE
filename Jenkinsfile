@@ -17,10 +17,12 @@ pipeline {
 
         stage('Build Application') {
             steps {
+                // Gradle Wrapper에 실행 권한 추가
+                sh 'chmod +x ./gradlew'
+
                 // Gradle을 사용하여 Spring Boot 애플리케이션 빌드 (dev 프로파일 활성화)
                 sh './gradlew clean build -Pspring.profiles.active=dev -x test'
             }
-        }
 
         stage('Build Docker Image') {
             steps {
