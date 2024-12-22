@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+
+  springboot:
+    build:
+      context: .
+    container_name: SearchSpaces
+    ports:
+      - "8081:8080"
+    depends_on:
+      - redis
+    environment:
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+      - DEV_DB_ENDPOINT
+      - DEV_DB_NAME
+      - DEV_DB_USERNAME
+      - DEV_DB_PASSWORD
+      - AWS_ACCESS_KEY
+      - AWS_SECRET_KEY
+      - JWT_SECRET_KEY
+      - KAKAO_CLIENT
+      - KAKAO_SECRET
+
+
+volumes:
+  redis-data:
