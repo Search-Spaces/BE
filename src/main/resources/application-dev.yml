@@ -16,8 +16,8 @@ spring:
       ddl-auto: create
   data:
     redis:
-      host: ${REDIS_HOST}
-      port: ${REDIS_PORT}
+      host: redis
+      port: 6379
 
 
 logging:
