@@ -26,6 +26,8 @@ services:
       - spring.profiles.active=dev  # dev 프로파일 활성화
     networks:
       - redis-network
+    env_file:
+      - temp.env
 
 volumes:
   redis-data:
