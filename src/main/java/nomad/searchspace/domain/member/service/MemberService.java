@@ -26,7 +26,6 @@ public class MemberService {
         member.setNickname(memberRequest.getNickname());
         member.setGender(memberRequest.getGender());
         member.setBirth(memberRequest.getBirth());
-        member.setPhoneNumber(memberRequest.getPhoneNumber());
 
     }
 

@@ -34,10 +34,6 @@ public class Member extends BaseTimeEntity {
     @Column(length = 50)
     private String birth;
 
-    @Setter
-    @Column(length = 50)
-    private String phoneNumber;
-
     private String role;
 
     @Setter
@@ -45,13 +41,12 @@ public class Member extends BaseTimeEntity {
     private List<Likes> likes;
 
     @Builder
-    private Member(String password, String email,  String nickname, Boolean gender, String birth, String phoneNumber, String role) {
+    private Member(String password, String email,  String nickname, Boolean gender, String birth, String role) {
         this.password = password;
         this.email = email;
         this.nickname = nickname;
         this.gender = gender;
         this.birth = birth;
-        this.phoneNumber = phoneNumber;
         this.role = role;
     }
 

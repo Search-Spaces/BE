@@ -26,15 +26,10 @@ public class AdditionalMemberInfoRequest {
             message = "생일은 yyyy-MM-dd 형식이어야 합니다.")
     private String birth;
 
-    @Schema(description = "핸드폰 번호 입력", example = "111-1111-1111")
-    @NotNull
-    private String phoneNumber;
-
-    private AdditionalMemberInfoRequest(String nickname, Boolean gender, String birth, String phoneNumber) {
+    private AdditionalMemberInfoRequest(String nickname, Boolean gender, String birth) {
         this.nickname = nickname;
         this.gender = gender;
         this.birth = birth;
-        this.phoneNumber = phoneNumber;
     }
 
 }
