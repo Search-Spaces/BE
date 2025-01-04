@@ -56,11 +56,12 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests((auth) -> auth
                         .requestMatchers(new AntPathRequestMatcher("/member/update")).hasRole("USER")
-                        .requestMatchers(new AntPathRequestMatcher("/post/createPost")).hasRole("USER")
+                        .requestMatchers(new AntPathRequestMatcher("/post/createPost")).permitAll()
                         .requestMatchers(new AntPathRequestMatcher("/post/getPost")).permitAll()
                         .requestMatchers(new AntPathRequestMatcher("/post/pageList")).permitAll()
                         .requestMatchers(new AntPathRequestMatcher("/post/cursorList")).permitAll()
                         .requestMatchers(new AntPathRequestMatcher("/post/getPost")).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher("/api/member/reissue")).permitAll()
                         .anyRequest().authenticated()
                 );
 
