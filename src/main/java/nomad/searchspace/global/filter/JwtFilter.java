@@ -62,7 +62,7 @@ public class JwtFilter extends OncePerRequestFilter {
         String category = jwtUtil.getCategory(originToken);
 
         // JwtFilter는 요청에 대해 accessToken만 취급하므로 access인지 확인
-        if (!"access".equals(category)) {
+        if (!"access_token".equals(category)) {
             PrintWriter writer = response.getWriter();
             writer.println("invalid access token");
 
