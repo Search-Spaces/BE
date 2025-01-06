@@ -105,7 +105,7 @@ public class PostService {
         }else{
             //정보가 없을시 예외 반환
             Member member = memberRepository.findByEmail(principalDetails.getMember().getEmail())
-                    .orElseThrow(() -> new ApiException(ErrorCode.MEMBER_NOW_FOUND));
+                    .orElseThrow(() -> new ApiException(ErrorCode.MEMBER_NOT_FOUND));
             userLiked = likeRepository.existsByPostAndMember(post, member);
         }
         //이미지 가져오기

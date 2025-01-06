@@ -8,6 +8,7 @@ import nomad.searchspace.global.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
@@ -62,6 +63,7 @@ public class SecurityConfig {
                         .requestMatchers(new AntPathRequestMatcher("/post/cursorList")).permitAll()
                         .requestMatchers(new AntPathRequestMatcher("/post/getPost")).permitAll()
                         .requestMatchers(new AntPathRequestMatcher("/api/member/reissue")).permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/scraps/").hasRole("USER")
                         .anyRequest().authenticated()
                 );
 

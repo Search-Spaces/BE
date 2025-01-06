@@ -34,7 +34,7 @@ public class JwtUtil {
 
     public Authentication getAuthentication(String token) {
         Member member = memberRepository.findByEmail(getMemberEmail(token))
-                .orElseThrow(() -> new ApiException(ErrorCode.MEMBER_NOW_FOUND));
+                .orElseThrow(() -> new ApiException(ErrorCode.MEMBER_NOT_FOUND));
 
         PrincipalDetails principalDetails = new PrincipalDetails(member, null);
         return new UsernamePasswordAuthenticationToken(principalDetails, null, principalDetails.getAuthorities());

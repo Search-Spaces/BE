@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import nomad.searchspace.domain.member.dto.AdditionalMemberInfoRequest;
+import nomad.searchspace.domain.member.dto.MemberResponse;
 import nomad.searchspace.domain.member.service.MemberService;
 import nomad.searchspace.global.auth.PrincipalDetails;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +27,11 @@ public class MemberController {
         memberService.updateMember(principalDetails, additionalMemberInfoRequest);
 
         return ResponseEntity.ok().body("update success");
+    }
+
+    @GetMapping
+    public ResponseEntity<MemberResponse> getMemberInfo(@AuthenticationPrincipal PrincipalDetails principalDetails) {
+        return ResponseEntity.ok().body(memberService.getMemberInfo(principalDetails));
     }
 
 }

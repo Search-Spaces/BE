@@ -14,6 +14,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
+#    defer-datasource-initialization: true # sql.data 전용
   data:
     redis:
       host: localhost
@@ -40,7 +41,9 @@ spring:
             token-uri: https://kauth.kakao.com/oauth/token
             user-info-uri: https://kapi.kakao.com/v2/user/me
             user-name-attribute: id # 유저 정보 조회 시 반환되는 최상위 필드명으로 해야 한다.
-
+#  sql: # sql.data 전용
+#    init:
+#      mode: always
 
 
 logging:
