@@ -2,6 +2,7 @@ package nomad.searchspace.domain.member.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import nomad.searchspace.domain.member.dto.AdditionalMemberInfoRequest;
 import nomad.searchspace.domain.member.dto.MemberResponse;
@@ -29,9 +30,19 @@ public class MemberController {
         return ResponseEntity.ok().body("update success");
     }
 
+    @Operation(summary = "마이페이지")
     @GetMapping
     public ResponseEntity<MemberResponse> getMemberInfo(@AuthenticationPrincipal PrincipalDetails principalDetails) {
         return ResponseEntity.ok().body(memberService.getMemberInfo(principalDetails));
+    }
+
+
+    @PatchMapping("/logout")
+    public ResponseEntity logout(@AuthenticationPrincipal PrincipalDetails principalDetails, HttpServletRequest request) {
+
+        memberService.logout(principalDetails, request);
+
+        return ResponseEntity.ok().body("logout success");
     }
 
 }

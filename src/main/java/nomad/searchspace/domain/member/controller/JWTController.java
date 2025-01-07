@@ -26,7 +26,7 @@ public class JWTController {
 
         //get refresh token
         String refresh = null;
-        String access = request.getHeader("access"); // 바꿔야하나
+        String access = request.getHeader("Authorization"); // 바꿔야하나
 
         Cookie[] cookies = request.getCookies();
         for (Cookie cookie : cookies) {
@@ -37,7 +37,7 @@ public class JWTController {
 
         if (refresh == null) {
             //response status code
-            return ResponseEntity.badRequest().body("Refresh Token not exist 1");
+            return ResponseEntity.badRequest().body("Refresh Token not exist");
         }
 
         //expired check
@@ -53,7 +53,7 @@ public class JWTController {
 
         if (!category.equals("refresh_token")) {
             //response status code
-            return ResponseEntity.badRequest().body("Refresh Token not exist 2");
+            return ResponseEntity.badRequest().body("Invalid Refresh Token");
         }
 
         //Redis에 저장되어 있는지 확인
@@ -63,11 +63,11 @@ public class JWTController {
         log.info("####### username ####### {}",memberEmail);
         log.info("####### role ####### {}",role);
 
-        String isExist = redisService.getRefreshToken(memberEmail);
+        String storedRefreshToekn = redisService.getRefreshToken(memberEmail);
 
-        if (isExist == null) {
+        if (storedRefreshToekn == null || !storedRefreshToekn.equals(refresh)) {
             //response body
-            return ResponseEntity.badRequest().body("Refresh Token not exist 3");
+            return ResponseEntity.badRequest().body("Invalid Refresh Token or Refresh Token not exist");
         }
 
         //make new JWT
