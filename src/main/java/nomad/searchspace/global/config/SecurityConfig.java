@@ -2,6 +2,7 @@ package nomad.searchspace.global.config;
 
 import lombok.RequiredArgsConstructor;
 import nomad.searchspace.domain.member.service.CustomOAuth2UserService;
+import nomad.searchspace.domain.member.service.RedisService;
 import nomad.searchspace.global.auth.OAuth2SuccessHandler;
 import nomad.searchspace.global.filter.JwtFilter;
 import nomad.searchspace.global.util.JwtUtil;
@@ -40,6 +41,8 @@ public class SecurityConfig {
 
     private final CustomOAuth2UserService customOAuth2UserService;
 
+    private final RedisService redisService;
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
@@ -48,7 +51,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
-                .addFilterBefore(new JwtFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new JwtFilter(jwtUtil, redisService), UsernamePasswordAuthenticationFilter.class)
                 .oauth2Login(oauth2 -> oauth2
                         .successHandler(oAuth2SuccessHandler)
                         .userInfoEndpoint(userInfoEndpointConfig -> userInfoEndpointConfig

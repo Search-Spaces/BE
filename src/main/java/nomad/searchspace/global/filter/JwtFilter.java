@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import nomad.searchspace.domain.member.domain.Member;
 import nomad.searchspace.domain.member.repository.MemberRepository;
+import nomad.searchspace.domain.member.service.RedisService;
 import nomad.searchspace.global.auth.PrincipalDetails;
 import nomad.searchspace.global.exception.ApiException;
 import nomad.searchspace.global.exception.ErrorCode;
@@ -25,6 +26,7 @@ import java.io.PrintWriter;
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+    private final RedisService redisService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -40,6 +42,15 @@ public class JwtFilter extends OncePerRequestFilter {
 
         // Bearer 제거
         String originToken = accessToken.substring(7);
+
+        // 로그아웃 처리된 어세스 토큰인지 확인
+        if (redisService.isTokenBlacklisted(originToken)) {
+            PrintWriter writer = response.getWriter();
+            writer.println("access token is blacklisted");
+
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            return;
+        }
 
         // 토큰이 유효한지 확인 후 클라리언트로 상태 코드 응답
         try {

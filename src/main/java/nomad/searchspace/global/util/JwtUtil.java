@@ -83,4 +83,19 @@ public class JwtUtil {
         redisTemplate.opsForValue().set("refresh_token:" + memberEmail, refreshToken, 1000L * 60 * 60 * 24 * 14, TimeUnit.MILLISECONDS); // 2 주 후 만료
         return refreshToken;
     }
+
+
+    // 토큰의 만료 시간까지 남은 시간을 반환 (단위: milliseconds)
+    public long getTokenRemainingTime(String token) {
+        Date expiration = Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .getExpiration();
+
+        long now = System.currentTimeMillis();
+        return expiration.getTime() - now;
+    }
+
 }
