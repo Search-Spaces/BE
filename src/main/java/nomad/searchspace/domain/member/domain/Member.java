@@ -1,10 +1,13 @@
 package nomad.searchspace.domain.member.domain;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 import nomad.searchspace.domain.BaseTimeEntity;
 import nomad.searchspace.domain.Review.entity.Review;
 import nomad.searchspace.domain.like.entity.Likes;
+import nomad.searchspace.domain.scrap.domain.Scrap;
+import org.hibernate.annotations.BatchSize;
 import nomad.searchspace.domain.post.entity.Post;
 
 import java.util.List;
@@ -17,7 +20,8 @@ public class Member extends BaseTimeEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true)
+    @NotBlank(message = "이메일은 필수입니다.")
+    @Column(unique = true, nullable = false)
     private String email;
 
     @Setter
@@ -34,15 +38,15 @@ public class Member extends BaseTimeEntity {
     @Column(length = 50)
     private String birth;
 
-    @Setter
-    @Column(length = 50)
-    private String phoneNumber;
-
     private String role;
 
     @Setter
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Likes> likes;
+
+    @BatchSize(size = 10)
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Scrap> scraps;
 
     @Setter
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -53,13 +57,12 @@ public class Member extends BaseTimeEntity {
     private List<Post> posts;
 
     @Builder
-    private Member(String password, String email,  String nickname, Boolean gender, String birth, String phoneNumber, String role) {
+    private Member(String password, String email,  String nickname, Boolean gender, String birth, String role) {
         this.password = password;
         this.email = email;
         this.nickname = nickname;
         this.gender = gender;
         this.birth = birth;
-        this.phoneNumber = phoneNumber;
         this.role = role;
     }
 

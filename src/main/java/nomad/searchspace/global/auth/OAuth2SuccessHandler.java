@@ -31,7 +31,6 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         PrincipalDetails principalDetails = (PrincipalDetails) authentication.getPrincipal();
 
         Boolean isExistingUser = (Boolean) principalDetails.getAttributes().get("exist");
-
         // 토큰 생성시에 사용자명과 권한이 필요
         String userEmail = principalDetails.getUsername();//Todo 확인해야함.
 
@@ -42,31 +41,29 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         // accessToken과 refreshToken 생성
         // accessToken 만료시간 : 1시간
-        String accessToken = jwtUtil.createJwt("access", userEmail, role, 3600000L);
+        String accessToken = jwtUtil.createAccessToken(userEmail, role);
         // refreshToken 만료시간 : 2주
-        String refreshToken = jwtUtil.createJwt("refresh", userEmail, role, 1209600000L);
+        String refreshToken = jwtUtil.createRefreshToken(userEmail);
 
-        // redis에 insert (key = username, value = refreshToken)
-
-        // refreshToken은 쿠키를 통하여 응답
-        response.addCookie(createCookie("refresh_token", refreshToken, 1209600));
+        // 토큰을 쿠키를 통하여 응답
+        response.addCookie(createCookie("access", accessToken, 3600));
+        response.addCookie(createCookie("refresh", refreshToken, 1209600));
         response.setStatus(HttpServletResponse.SC_OK);
 
         if (isExistingUser) {
-            // 프론트엔드에서 리다이렉트를 받으면 헤더값은 바로 빼낼 수 없기 때문에, URL 파라미터로 access token을 전달
             // 기존 회원
-            response.sendRedirect("http://localhost:3000/landing/authcallback/?access_token=" + accessToken);
+            response.sendRedirect("http://localhost:3000/landing/authcallback");
         }
         else {
             // 신규 회원
-            response.sendRedirect("http://localhost:80/new-user?access_token=" + accessToken);
+            response.sendRedirect("http://localhost:3000/new-user"); // todo 새로운 정보 안 썼을 경우 다시 이 쪽으로 리디렉션 시키기?
         }
 
     }
 
     // 쿠키 생성 메서드
-    private Cookie createCookie(String name, String value, int maxAge) {
-        Cookie cookie = new Cookie(name, value);
+    private Cookie createCookie(String key, String value, int maxAge) {
+        Cookie cookie = new Cookie(key, value);
         cookie.setMaxAge(maxAge);
         cookie.setPath("/");
 //        cookie.setSecure();
