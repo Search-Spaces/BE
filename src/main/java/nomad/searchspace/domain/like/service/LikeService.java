@@ -23,7 +23,7 @@ public class LikeService {
     //좋아요 등록
     public LikeResponse addLike(PrincipalDetails principalDetails, Long postId){
         Member member = memberRepository.findByEmail(principalDetails.getMember().getEmail())
-                .orElseThrow(() -> new ApiException(ErrorCode.MEMBER_NOW_FOUND));
+                .orElseThrow(() -> new ApiException(ErrorCode.MEMBER_NOT_FOUND));
         Post post = postRepository.findById(postId).orElseThrow(()-> new ApiException(ErrorCode.SPACE_NOT_FOUND));
 
         //특정 회원이 해당 게시물에 좋아요를 눌렀는지 확인
@@ -52,7 +52,7 @@ public class LikeService {
     //좋아요 취소
     public LikeResponse deleteLike(PrincipalDetails principalDetails, Long postId) {
         Member member = memberRepository.findByEmail(principalDetails.getMember().getEmail())
-                .orElseThrow(() -> new ApiException(ErrorCode.MEMBER_NOW_FOUND));
+                .orElseThrow(() -> new ApiException(ErrorCode.MEMBER_NOT_FOUND));
         Post post = postRepository.findById(postId).orElseThrow(()-> new ApiException(ErrorCode.SPACE_NOT_FOUND));
 
         //특정 회원이 해당 게시물에 좋아요를 눌렀는지 확인

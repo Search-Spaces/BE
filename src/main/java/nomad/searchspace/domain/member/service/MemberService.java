@@ -21,7 +21,7 @@ public class MemberService {
     @Transactional
     public void updateMember(PrincipalDetails principalDetails, AdditionalMemberInfoRequest memberRequest) {
         Member member = memberRepository.findByEmail(principalDetails.getMember().getEmail())
-                .orElseThrow(() -> new ApiException(ErrorCode.MEMBER_NOW_FOUND)); // getattributekey로도 검색 해보기
+                .orElseThrow(() -> new ApiException(ErrorCode.MEMBER_NOT_FOUND)); // getattributekey로도 검색 해보기
 
         member.setNickname(memberRequest.getNickname());
         member.setGender(memberRequest.getGender());

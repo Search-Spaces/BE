@@ -56,11 +56,13 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests((auth) -> auth
                         .requestMatchers(new AntPathRequestMatcher("/member/update")).hasRole("USER")
-                        .requestMatchers(new AntPathRequestMatcher("/post/createPost")).hasRole("USER")
-                        .requestMatchers(new AntPathRequestMatcher("/post/getPost")).permitAll()
-                        .requestMatchers(new AntPathRequestMatcher("/post/pageList")).permitAll()
-                        .requestMatchers(new AntPathRequestMatcher("/post/cursorList")).permitAll()
-                        .requestMatchers(new AntPathRequestMatcher("/post/getPost")).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher("/post/create")).hasRole("USER")
+                        .requestMatchers(new AntPathRequestMatcher("/post/get/**")).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher("/like/**")).hasRole("USER")
+                        .requestMatchers(new AntPathRequestMatcher("/review/create")).hasRole("USER")
+                        .requestMatchers(new AntPathRequestMatcher("/review/get/**")).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher("/post/delete/**")).hasRole("ADMIN")
+                        .requestMatchers(new AntPathRequestMatcher("/review/delete/**")).hasRole("ADMIN")
                         .anyRequest().authenticated()
                 );
 

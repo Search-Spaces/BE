@@ -18,14 +18,14 @@ import org.springframework.web.bind.annotation.*;
 public class LikeController {
     private final LikeService likeService;
 
-    @Operation(summary = "좋아요 클릭시 좋아요 등록", description = "좋아요 클릭시 좋아요 등록")
-    @PostMapping("/add")
+    @Operation(summary = "좋아요 클릭시 좋아요 등록", description = "좋아요 클릭시 좋아요 등록하는 api 입니다.")
+    @PostMapping("/create")
     public ResponseEntity<LikeResponse> addLike(@AuthenticationPrincipal PrincipalDetails principalDetails, @RequestParam Long postId) {
         LikeResponse response = likeService.addLike(principalDetails,postId);
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "좋아요 클릭시 좋아요 취소", description = "좋아요 클릭시 좋아요 삭제")
+    @Operation(summary = "좋아요 클릭시 좋아요 취소", description = "좋아요 클릭시 좋아요 삭제하는 api 입니다")
     @DeleteMapping("/delete")
     public ResponseEntity<LikeResponse> deleteLike(@AuthenticationPrincipal PrincipalDetails principalDetails, @RequestParam Long postId) {
         LikeResponse response = likeService.deleteLike(principalDetails, postId);

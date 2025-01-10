@@ -2,7 +2,6 @@ package nomad.searchspace.domain.post.DTO;
 
 import lombok.Builder;
 import lombok.Data;
-import nomad.searchspace.domain.post.entity.PostImage;
 import nomad.searchspace.domain.post.entity.PostType;
 
 import java.util.List;
@@ -24,7 +23,9 @@ public class PostResponse {
     private boolean copyright;
     private boolean approval;
     private int likeCount;
+    private int reviewCount;
     private boolean userLiked;
+    private String createEmail;
 
     private boolean isOpen;
     private double distance;

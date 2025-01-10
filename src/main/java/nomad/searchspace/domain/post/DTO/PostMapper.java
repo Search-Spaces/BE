@@ -29,6 +29,8 @@ public class PostMapper {
 
         // 엔티티 -> 응답
         public PostResponse toResponse(Post post, boolean userLiked) {
+            String createEmail = (post.getMember() != null) ? post.getMember().getEmail() : null;
+
             return PostResponse.builder()
                     .id(post.getPostId())
                     .title(post.getTitle())
@@ -45,6 +47,8 @@ public class PostMapper {
                     .approval(post.isApproval())
                     .likeCount(post.getLikes() != null ? post.getLikes().size() : 0)
                     .userLiked(userLiked)
+                    .reviewCount(post.getReviews() != null ? post.getReviews().size() : 0)
+                    .createEmail(createEmail)
                     .images(post.getImages().stream() // PostImage 엔티티를 DTO로 변환
                             .map(image -> PostImageResponse.builder()
                                     .url(image.getImageUrl())
