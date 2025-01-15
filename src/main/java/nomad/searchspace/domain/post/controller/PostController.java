@@ -27,8 +27,8 @@ public class PostController {
     private final PostService service;
 
     //전체 리스트 가져오기(페이지)
-    @Operation(summary = "전체 리스트 불러오기(페이징)", description = "전체 post 리스트를 가지고 오고 키워드 검색이 가능합니다 페이징처리되어있는 api입니다.")
-    @GetMapping("/pageList")
+    @Operation(summary = "전체 리스트 불러오기(페이징)", description = "전체 post 리스트를 가지고 오고 키워드 검색이 가능합니다 페이징처리되어있는 api 입니다.")
+    @GetMapping("/get/pageList")
     public ResponseEntity<Page<PostResponse>> getPostList(@RequestParam(defaultValue = "1") @Nullable int page,
                                                           @RequestParam(required = false) String keyword,@AuthenticationPrincipal PrincipalDetails principalDetails) {
         Page<PostResponse> response = service.getPostList(page, keyword, principalDetails);
@@ -36,28 +36,35 @@ public class PostController {
     }
 
     //전체 리스트 가져오기(커서)
-    @Operation(summary = "전체 및 검색 리스트 불러오기(커서)", description = "전체 post 리스트를 가지고 오고 다양한 검색이 가능합니다 커서기반 api입니다.")
-    @GetMapping("/cursorList")
+    @Operation(summary = "전체 및 검색 리스트 불러오기(커서)", description = "전체 post 리스트를 가지고 오고 다양한 검색이 가능합니다 커서기반 api 입니다.")
+    @GetMapping("/get/cursorList")
     public ResponseEntity<List<PostResponse>> getPosts (@ModelAttribute PostRequest request, @AuthenticationPrincipal PrincipalDetails principalDetails) {
         List<PostResponse> response = service.getPostsByCursor(request, principalDetails);
         return ResponseEntity.ok(response);
     }
 
     //특정 id로 상세정보 가져오기
-    @Operation(summary = "게시물의 상세정보 가져오기", description = "특정 id 값으로 게시물의 상세한 정보를 가지고 올수 있는 api입니다.")
-    @GetMapping("/getPost")
+    @Operation(summary = "게시물의 상세정보 가져오기", description = "특정 id 값으로 게시물의 상세한 정보를 가지고 올수 있는 api 입니다.")
+    @GetMapping("/get/postInfo")
     public ResponseEntity<PostResponse> getPost(@RequestParam Long postId, @AuthenticationPrincipal PrincipalDetails principalDetails) {
         PostResponse response = service.getPost(postId, principalDetails);
         return ResponseEntity.ok(response);
     }
 
     //게시물 생성
-    @Operation(summary = "게시물 생성 요청", description = "게시물 생성을 요청하는 api입니다.")
-    @PostMapping(value = "/createPost", consumes = "multipart/form-data")
-    public ResponseEntity<PostResponse> createPost(@RequestPart PostDTO dto, @RequestPart List<MultipartFile> images) throws IOException, ParseException {
-        PostResponse response = service.create(dto, images);
+    @Operation(summary = "게시물 생성 요청", description = "게시물 생성을 요청하는 api 입니다.")
+    @PostMapping(value = "/create", consumes = "multipart/form-data")
+    public ResponseEntity<PostResponse> createPost(@RequestPart PostDTO dto, @RequestPart List<MultipartFile> images, @AuthenticationPrincipal PrincipalDetails principalDetails) throws IOException, ParseException {
+        PostResponse response = service.create(dto, images, principalDetails);
         return ResponseEntity.ok(response);
     }
 
+    //게시물 삭제
+    @Operation(summary = "게시물 삭제", description = "관리자가 없어진 혹은 부적절한 게시물을 삭제하는 api 입니다.")
+    @DeleteMapping("/delete")
+    public ResponseEntity<PostResponse> deletePost(@RequestParam Long postId, @AuthenticationPrincipal PrincipalDetails principalDetails) {
+        PostResponse response = service.delete(postId, principalDetails);
+        return ResponseEntity.ok(response);
+    }
 
 }

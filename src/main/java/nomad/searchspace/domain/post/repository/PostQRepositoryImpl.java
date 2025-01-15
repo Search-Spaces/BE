@@ -12,9 +12,7 @@ import nomad.searchspace.domain.post.entity.Post;
 import nomad.searchspace.domain.post.entity.QPost;
 import nomad.searchspace.domain.post.entity.QPostImage;
 
-
 import java.util.List;
-
 
 
 @RequiredArgsConstructor
@@ -24,9 +22,9 @@ public class PostQRepositoryImpl implements PostQRepository {
     QPostImage postImage = QPostImage.postImage;
 
     @Override
-    public List<Post> findByCussor(PostRequest request, int lastLike, double lastDistance) {
+    public List<Post> findByCussor(PostRequest request, int lastLike, double lastDistance, int lastReviewCount) {
         OrderSpecifier<?> orderBy = getOrderBy(request);
-        BooleanBuilder whereClause = getWhereClause(request, lastLike, lastDistance);
+        BooleanBuilder whereClause = getWhereClause(request, lastLike, lastDistance, lastReviewCount);
         return queryFactory
                 .select(post)
                 .from(post)
@@ -56,13 +54,14 @@ public class PostQRepositoryImpl implements PostQRepository {
             // 추천순 정렬 (likeCount 기준)
             orderBy = post.likes.size().desc();
         } else if (request.getOrderBy() == OrderBy.REVIEW) {
-            //리뷰순 정렬 (리뷰 완료후 추가 예정)
+            //리뷰순 정렬
+            orderBy = post.reviews.size().desc();
         }
         return orderBy;
     }
     
     //검색조건 가져오기
-    private BooleanBuilder getWhereClause(PostRequest request, int lastLike, double lastDistance) {
+    private BooleanBuilder getWhereClause(PostRequest request, int lastLike, double lastDistance, int lastReviewCount) {
         BooleanBuilder whereClause = new BooleanBuilder();
 
         // 동일 ID 제외
@@ -84,28 +83,33 @@ public class PostQRepositoryImpl implements PostQRepository {
             whereClause.and(post.latitude.between(request.getBottomRightLat(), request.getTopLeftLat()));
             whereClause.and(post.longitude.between(request.getTopLeftLng(), request.getBottomRightLng()));
         }
-        //추천순 커서 조건
-        if (request.getOrderBy() == OrderBy.RECOMMENDED){
-            whereClause.and(
-                    post.likes.size().lt(lastLike).or(post.likes.size().eq(lastLike).and(post.postId.gt(request.getPostId())))
-            );
-        // 거리순 커서 조건
-        }else if (request.getOrderBy() == OrderBy.DISTANCE && request.getUserLocation() != null) {
-            double userLat = request.getUserLocation()[0];
-            double userLng = request.getUserLocation()[1];
-            double earthRadiusKm = 6371.0;
+        if (request.getPostId() != null && request.getPostId() > 0) {
+            //추천순 커서 조건
+            if (request.getOrderBy() == OrderBy.RECOMMENDED){
+                whereClause.and(
+                        post.likes.size().lt(lastLike)
+                                .or(post.likes.size().eq(lastLike).and(post.postId.gt(request.getPostId())))
+                );
+            // 거리순 커서 조건
+            }else if (request.getOrderBy() == OrderBy.DISTANCE && request.getUserLocation() != null) {
+                double userLat = request.getUserLocation()[0];
+                double userLng = request.getUserLocation()[1];
+                double earthRadiusKm = 6371.0;
 
-            // 거리 계산
-            NumberExpression<Double> distanceExpression = Expressions.numberTemplate(Double.class,
-                    "{0} * acos(cos(radians({1})) * cos(radians({2})) * cos(radians({3}) - radians({4})) + sin(radians({1})) * sin(radians({2})))",
-                    earthRadiusKm, userLat, post.latitude, userLng, post.longitude);
+                // 거리 계산
+                NumberExpression<Double> distanceExpression = Expressions.numberTemplate(Double.class,
+                        "{0} * acos(cos(radians({1})) * cos(radians({2})) * cos(radians({3}) - radians({4})) + sin(radians({1})) * sin(radians({2})))",
+                        earthRadiusKm, userLat, post.latitude, userLng, post.longitude);
 
-            whereClause.and(distanceExpression.gt(lastDistance)
-                    .or(distanceExpression.eq(lastDistance).and(post.postId.gt(request.getPostId())))
-            );
-        //리뷰순 커서 조건(리뷰 완료후 추가 예정)
-        }else if (request.getOrderBy() == OrderBy.REVIEW){
-
+                whereClause.and(distanceExpression.gt(lastDistance)
+                        .or(distanceExpression.eq(lastDistance).and(post.postId.gt(request.getPostId())))
+                );
+            //리뷰순 커서 조건
+            }else if (request.getOrderBy() == OrderBy.REVIEW){
+                whereClause.and(post.reviews.size().lt(lastReviewCount)
+                        .or(post.reviews.size().eq(lastReviewCount).and(post.postId.gt(request.getPostId())))
+                );
+            }
         }
         return whereClause;
     }

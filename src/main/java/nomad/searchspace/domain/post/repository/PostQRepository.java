@@ -7,5 +7,5 @@ import java.util.List;
 import java.util.Optional;
 
 public interface PostQRepository {
-    List<Post> findByCussor(PostRequest postRequest, int lastLikes, double lastDistance);
+    List<Post> findByCussor(PostRequest postRequest, int lastLikes, double lastDistance, int lastReviewCount);
 }

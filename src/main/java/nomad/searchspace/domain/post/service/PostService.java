@@ -1,6 +1,10 @@
 package nomad.searchspace.domain.post.service;
 
 import lombok.RequiredArgsConstructor;
+import nomad.searchspace.domain.Review.entity.Review;
+import nomad.searchspace.domain.Review.entity.ReviewImage;
+import nomad.searchspace.domain.Review.repository.ReviewImageRepository;
+import nomad.searchspace.domain.Review.repository.ReviewRepository;
 import nomad.searchspace.domain.like.repository.LikeRepository;
 import nomad.searchspace.domain.member.domain.Member;
 import nomad.searchspace.domain.member.repository.MemberRepository;
@@ -50,14 +54,19 @@ public class PostService {
     private final MemberRepository memberRepository;
     private final S3Service s3Service;
     private final PostImageRepository postImageRepository;
-
+    private final ReviewImageRepository reviewImageRepository;
+    private final ReviewRepository reviewRepository;
 
     @Value("${KAKAO_CLIENT}")
     private String KAKAO_CLIENT;
 
 
-    //게시물 생성 요청 + 이미지 부분 추가 필요
-    public PostResponse create(PostDTO dto, List<MultipartFile> images) throws IOException, ParseException {
+    //게시물 생성 요청
+    public PostResponse create(PostDTO dto, List<MultipartFile> images, PrincipalDetails principalDetails) throws IOException, ParseException {
+        //회원정보가 없을시 예외 반환
+        Member member = memberRepository.findByEmail(principalDetails.getMember().getEmail())
+                .orElseThrow(() -> new ApiException(ErrorCode.MEMBER_NOT_FOUND));
+        
         Post post = mapper.toEntity(dto);
 
         // 주소에서 위도와 경도 가져오기
@@ -70,10 +79,10 @@ public class PostService {
         }
         post.setLatitude(GEOCode[0]);
         post.setLongitude(GEOCode[1]);
-
+        post.setMember(member);
         post = postRepository.save(post);
 
-        // 2. 이미지 업로드
+        // 이미지 업로드
         List<PostImage> postImages = new ArrayList<>();
         int count = 1;
         for (MultipartFile image : images) {
@@ -90,7 +99,7 @@ public class PostService {
         postImageRepository.saveAll(postImages);
 
         post.setImages(postImages);
-
+        
         return mapper.toResponse(post, false);
     }
 
@@ -109,7 +118,7 @@ public class PostService {
             userLiked = likeRepository.existsByPostAndMember(post, member);
         }
         //이미지 가져오기
-        List<PostImage> postImages = postImageRepository.findByPostPostId(postId);
+        List<PostImage> postImages = post.getImages();;
         post.setImages(postImages);
 
         return mapper.toResponse(post, userLiked);
@@ -120,7 +129,7 @@ public class PostService {
         Member member;
         if (principalDetails != null) {
             member = memberRepository.findByEmail(principalDetails.getMember().getEmail())
-                    .orElse(null);
+                    .orElseThrow(() -> new ApiException(ErrorCode.MEMBER_NOT_FOUND));
         } else {
             member = null;
         }
@@ -146,7 +155,7 @@ public class PostService {
             // 회원 정보가 있는 경우 좋아요 여부 확인, 없으면 false
             boolean userLiked = member != null && likeRepository.existsByPostAndMember(post, member);
             //이미지 가져오기
-            List<PostImage> postImages = postImageRepository.findByPostPostId(post.getPostId());
+            List<PostImage> postImages = post.getImages();;
             post.setImages(postImages);
 
             return mapper.toResponse(post, userLiked);
@@ -159,7 +168,7 @@ public class PostService {
         Member member;
         if (principalDetails != null) {
             member = memberRepository.findByEmail(principalDetails.getMember().getEmail())
-                    .orElse(null);
+                    .orElseThrow(()->new ApiException(ErrorCode.MEMBER_NOT_FOUND));
         } else {
             member = null;
         }
@@ -167,18 +176,20 @@ public class PostService {
         int lastLikes = 0;
         double lastDistance = 0.0;
         double[] userLocation = request.getUserLocation(); //유저 위치정보 가져오기
-        
+        int lastReviewCount = 0;
+
         if(request.getPostId()!=null && request.getPostId()>0){
             lastPost = postRepository.findById(request.getPostId()).orElseThrow(()->new ApiException(ErrorCode.SPACE_NOT_FOUND));
             lastLikes = lastPost.getLikes().size(); //마지막 게시물의 좋아요수 가져오기
             lastDistance = calculateDistance(userLocation, lastPost);// 마지막 사용자와의 거리 가져오기
+            lastReviewCount = lastPost.getReviews().size();
         }else{
             request.setPostId(0L);
         }
 
         Boolean isOpen = request.getIsOpen(); //영업정보 가져오기
 
-        List<Post> posts = postRepository.findByCussor(request, lastLikes, lastDistance);
+        List<Post> posts = postRepository.findByCussor(request, lastLikes, lastDistance, lastReviewCount);
 
         //정보 없을시 예외 반환
         if (posts.isEmpty()) {
@@ -192,7 +203,7 @@ public class PostService {
                     double distance = calculateDistance(userLocation, post);
                     boolean userLiked = member != null && likeRepository.existsByPostAndMember(post, member);
                     //이미지 가져오기
-                    List<PostImage> postImages = postImageRepository.findByPostPostId(post.getPostId());
+                    List<PostImage> postImages = post.getImages();;
                     post.setImages(postImages);
 
                     PostResponse response = mapper.toResponse(post, userLiked);
@@ -207,7 +218,38 @@ public class PostService {
                 .collect(Collectors.toList());
     }
 
+    //게시물 삭제하기
+    public PostResponse delete(Long postId, PrincipalDetails principalDetails) {
+        Member member = memberRepository.findByEmail(principalDetails.getMember().getEmail())
+                .orElseThrow(() -> new ApiException(ErrorCode.MEMBER_NOT_FOUND));
 
+        Post post = postRepository.findById(postId).orElseThrow(() -> new ApiException(ErrorCode.SPACE_NOT_FOUND));
+
+        // 관리자 확인 후 삭제
+        if (member.getRole().equals("ROLE_ADMIN")) {
+            // 해당 post와 관련된 모든 PostImage와 ReviewImage URL 조회
+            List<String> postImageUrls = post.getImages().stream()
+                    .map(PostImage::getImageUrl)
+                    .toList();
+
+            List<String> reviewImageUrls = post.getReviews().stream()
+                    .flatMap(review -> review.getImages().stream())
+                    .map(ReviewImage::getImageUrl)
+                    .toList();
+
+            //S3에서 이미지 삭제
+            List<String> allImageUrls = new ArrayList<>();
+            allImageUrls.addAll(postImageUrls);
+            allImageUrls.addAll(reviewImageUrls);
+
+            s3Service.deleteImagesFromS3(allImageUrls);
+
+            //Post 삭제 (Cascade로 연관된 엔티티 데이터 삭제)
+            postRepository.delete(post);
+        }
+
+        return mapper.toResponse(post, false);
+    }
 
 
 
@@ -346,5 +388,6 @@ public class PostService {
         return GEOCode;
 
     }
+
 
 }

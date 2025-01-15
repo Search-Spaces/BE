@@ -4,9 +4,11 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 import nomad.searchspace.domain.BaseTimeEntity;
+import nomad.searchspace.domain.Review.entity.Review;
 import nomad.searchspace.domain.like.entity.Likes;
 import nomad.searchspace.domain.scrap.domain.Scrap;
 import org.hibernate.annotations.BatchSize;
+import nomad.searchspace.domain.post.entity.Post;
 
 import java.util.List;
 
@@ -45,6 +47,14 @@ public class Member extends BaseTimeEntity {
     @BatchSize(size = 10)
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Scrap> scraps;
+
+    @Setter
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Review> reviews;
+
+    @Setter
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Post> posts;
 
     @Builder
     private Member(String password, String email,  String nickname, Boolean gender, String birth, String role) {

@@ -3,7 +3,9 @@ package nomad.searchspace.domain.post.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import nomad.searchspace.domain.Review.entity.Review;
 import nomad.searchspace.domain.like.entity.Likes;
+import nomad.searchspace.domain.member.domain.Member;
 
 import java.util.List;
 
@@ -60,6 +62,13 @@ public class Post {
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PostImage> images;
+
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Review> reviews;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id", nullable = false)
+    private Member member;
 
     @Builder
     public Post(String title, String content, String address, PostType type, double latitude,

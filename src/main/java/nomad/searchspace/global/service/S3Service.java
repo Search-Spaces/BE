@@ -103,6 +103,14 @@ public class S3Service {
             throw new AmazonS3Exception("삭제 실패");
         }
     }
+
+    //한번에 여러 이미지 삭제
+    public void deleteImagesFromS3(List<String> imageAddresses){
+        for (String imageAddress : imageAddresses) {
+            deleteImageFromS3(imageAddress);
+        }
+    }
+
     //이미지 키 가져오기
     private String getKey(String imageAddress){
         try{
