@@ -6,8 +6,10 @@ import nomad.searchspace.domain.Review.entity.ReviewImage;
 import nomad.searchspace.domain.Review.repository.ReviewImageRepository;
 import nomad.searchspace.domain.Review.repository.ReviewRepository;
 import nomad.searchspace.domain.like.repository.LikeRepository;
+import nomad.searchspace.domain.like.service.LikeRankingService;
 import nomad.searchspace.domain.member.domain.Member;
 import nomad.searchspace.domain.member.repository.MemberRepository;
+import nomad.searchspace.domain.member.service.RedisService;
 import nomad.searchspace.domain.post.DTO.*;
 import nomad.searchspace.domain.post.entity.Post;
 import nomad.searchspace.domain.post.entity.PostImage;
@@ -24,6 +26,9 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -46,6 +51,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@CacheConfig(cacheNames = "posts")
 public class PostService {
 
     private final PostRepository postRepository;
@@ -54,8 +60,7 @@ public class PostService {
     private final MemberRepository memberRepository;
     private final S3Service s3Service;
     private final PostImageRepository postImageRepository;
-    private final ReviewImageRepository reviewImageRepository;
-    private final ReviewRepository reviewRepository;
+    private final LikeRankingService likeRankingService;
 
     @Value("${KAKAO_CLIENT}")
     private String KAKAO_CLIENT;
@@ -152,13 +157,21 @@ public class PostService {
         }
 
         return posts.map(post -> {
+            String sortedHours = getSortedBusinessHours(post);// 정렬된 영업시간
+            boolean isCurrentlyOpen = calculateIsOpen(post);// 현재 영업 여부 확인
+
             // 회원 정보가 있는 경우 좋아요 여부 확인, 없으면 false
             boolean userLiked = member != null && likeRepository.existsByPostAndMember(post, member);
             //이미지 가져오기
             List<PostImage> postImages = post.getImages();;
             post.setImages(postImages);
 
-            return mapper.toResponse(post, userLiked);
+            PostResponse response = mapper.toResponse(post, userLiked);
+
+            response.setBusinessHours(sortedHours);
+            response.setOpen(isCurrentlyOpen);
+
+            return response;
         });
     }
 
@@ -202,6 +215,7 @@ public class PostService {
                     boolean isCurrentlyOpen = calculateIsOpen(post);// 현재 영업 여부 확인
                     double distance = calculateDistance(userLocation, post);
                     boolean userLiked = member != null && likeRepository.existsByPostAndMember(post, member);
+
                     //이미지 가져오기
                     List<PostImage> postImages = post.getImages();;
                     post.setImages(postImages);
@@ -251,14 +265,51 @@ public class PostService {
         return mapper.toResponse(post, false);
     }
 
+    ///////////////////////////////////////////////////////////////
+    ///////////////////////Redis 관련 메서드////////////////////////
+    //////////////////////////////////////////////////////////////
+
+    public List<PostResponse> getTop10FromRedis(PrincipalDetails principalDetails){
+        List<Long> top10Ids = likeRankingService.getTop10PostIds(); // Redis에서 상위 10개 ID
+
+        if (top10Ids.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // DB에서 postId에 해당하는 게시물들 한꺼번에 조회
+        List<Post> posts = postRepository.findAllById(top10Ids);
+
+        // List<Post>를 postId 순서대로 재정렬
+        Map<Long, Post> postMap = posts.stream()
+                .collect(Collectors.toMap(Post::getPostId, p -> p));
+
+        List<Post> sortedPosts = top10Ids.stream()
+                .map(postMap::get)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        // userLiked 여부
+        Member member;
+        if (principalDetails != null) {
+            member = memberRepository.findByEmail(principalDetails.getMember().getEmail())
+                    .orElse(null);
+        }else{
+            member = null;
+        }
 
 
+        return sortedPosts.stream()
+                .map(post -> {
+                    boolean userLiked = (member != null) && likeRepository.existsByPostAndMember(post, member);
+                    return mapper.toResponse(post, userLiked);
+                })
+                .collect(Collectors.toList());
 
+    }
 
-
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    //여기부터는 서비스에 필요한 계산 등의 메서드
-
+    ///////////////////////////////////////////////////////////////
+    ///////////서비스에 필요한 계산 등의 메서드////////////////////////
+    //////////////////////////////////////////////////////////////
 
     // 사용자와 게시물 사이의 거리 계산
     private double calculateDistance(double[] userLocation, Post lastPost) {
@@ -288,14 +339,41 @@ public class PostService {
     private String getSortedBusinessHours(Post post) {
         DayOfWeek today = LocalDate.now().getDayOfWeek();
         List<String> koreanDays = Arrays.asList("월", "화", "수", "목", "금", "토", "일");
+        //휴일 가져오기
+        String[] holidays = post.getHolidays().split(",");
 
         // 영업시간 파싱
         Map<String, String> businessHoursMap = new LinkedHashMap<>();
         String[] lines = post.getBusinessHours().split("\n");
+        boolean isEverydayOnly = false;
+
         for (String line : lines) {
-            String[] parts = line.split(" ", 2);
+            String[] parts = line.split(":", 2);
             if (parts.length == 2) {
-                businessHoursMap.put(parts[0], parts[1]);
+                if (parts[0].equals("매일")) {
+                    // "매일"만 있을 경우 모든 요일에 동일한 시간 적용
+                    isEverydayOnly = true;
+                    for (String day : koreanDays) {
+                        businessHoursMap.put(day, parts[1]);
+                    }
+                } else {
+                    businessHoursMap.put(parts[0], parts[1]);
+                }
+            }
+        }
+        
+        //매일 처리
+        if (isEverydayOnly) {
+            for (String day : koreanDays) {
+                businessHoursMap.putIfAbsent(day, "영업 정보 없음");
+            }
+        }
+        
+        //휴일 처리
+        for (String holiday : holidays) {
+            holiday = holiday.trim();
+            if (koreanDays.contains(holiday)) {
+                businessHoursMap.put(holiday, "휴무");
             }
         }
 
@@ -306,7 +384,7 @@ public class PostService {
             int dayIndex = (todayIndex + i) % 7;
             String currentDay = koreanDays.get(dayIndex);
             String hours = businessHoursMap.getOrDefault(currentDay, "영업 정보 없음");
-            sortedHours.append(currentDay).append(": ").append(hours).append("\n");
+            sortedHours.append(currentDay).append(" : ").append(hours).append("\n");
         }
         return sortedHours.toString().trim();
     }

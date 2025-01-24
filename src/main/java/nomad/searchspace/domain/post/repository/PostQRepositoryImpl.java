@@ -21,6 +21,7 @@ public class PostQRepositoryImpl implements PostQRepository {
     QPost post = QPost.post;
     QPostImage postImage = QPostImage.postImage;
 
+    //커서 조회
     @Override
     public List<Post> findByCussor(PostRequest request, int lastLike, double lastDistance, int lastReviewCount) {
         OrderSpecifier<?> orderBy = getOrderBy(request);
@@ -34,7 +35,6 @@ public class PostQRepositoryImpl implements PostQRepository {
                 .limit(request.getLimit())
                 .fetch();
     }
-
 
     //정렬기준 가져오기
     private OrderSpecifier<?> getOrderBy(PostRequest request) {

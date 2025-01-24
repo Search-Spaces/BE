@@ -26,6 +26,16 @@ import java.util.List;
 public class PostController {
     private final PostService service;
 
+    //좋아요 top10 게시물 가져오기
+    @Operation(summary = "Redis ZSET에서 좋아요 Top10 조회", description = "좋아요 상위 10개의 게시물을 캐시에서 가져오는 api")
+    @GetMapping("/get/top10")
+    public ResponseEntity<List<PostResponse>> getTop10(
+            @AuthenticationPrincipal PrincipalDetails principalDetails
+    ) {
+        List<PostResponse> top10 = service.getTop10FromRedis(principalDetails);
+        return ResponseEntity.ok(top10);
+    }
+
     //전체 리스트 가져오기(페이지)
     @Operation(summary = "전체 리스트 불러오기(페이징)", description = "전체 post 리스트를 가지고 오고 키워드 검색이 가능합니다 페이징처리되어있는 api 입니다.")
     @GetMapping("/get/pageList")
