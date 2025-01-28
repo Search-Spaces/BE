@@ -9,6 +9,7 @@ import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.repository.configuration.EnableRedisRepositories;
+import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 //@EnableRedisRepositories 이 경우는 redis를 repository로 쓸 때
@@ -36,11 +37,11 @@ public class RedisConfig {
 
         redisTemplate.setKeySerializer(new StringRedisSerializer());
         redisTemplate.setValueSerializer(new StringRedisSerializer());
-//        redisTemplate.setValueSerializer(new GenericJackson2JsonRedisSerializer());
+        redisTemplate.setValueSerializer(new GenericJackson2JsonRedisSerializer());
 
         redisTemplate.setHashKeySerializer(new StringRedisSerializer());
         redisTemplate.setHashValueSerializer(new StringRedisSerializer());
-//        redisTemplate.setHashValueSerializer(new GenericJackson2JsonRedisSerializer()); 이 경우 redis에 객체같은 더 무거운걸 넣을때 사용. 지금은 토큰만 쓰니까
+        redisTemplate.setHashValueSerializer(new GenericJackson2JsonRedisSerializer()); //이 경우 redis에 객체같은 더 무거운걸 넣을때 사용. 지금은 토큰만 쓰니까
 
         return redisTemplate;
     }

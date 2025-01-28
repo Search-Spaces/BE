@@ -19,6 +19,7 @@ public class LikeService {
     private final LikeRepository likeRepository;
     private final PostRepository postRepository;
     private final MemberRepository memberRepository;
+    private final LikeRankingService likeRankingService;
 
     //좋아요 등록
     public LikeResponse addLike(PrincipalDetails principalDetails, Long postId){
@@ -39,7 +40,12 @@ public class LikeService {
                 .build();
 
         likeRepository.save(like);
+
         int updateCount = likeRepository.countByPost(post);
+
+        // Redis zset에서 점수 +1
+        likeRankingService.incrementLikeCount(postId, +1);
+
 
         return LikeResponse.builder()
                 .memberId(member.getId())
@@ -62,7 +68,11 @@ public class LikeService {
         }
 
         likeRepository.deleteByMemberAndPost(member,post);
+
         int updateCount = likeRepository.countByPost(post);
+
+        // Redis zset 점수 -1
+        likeRankingService.incrementLikeCount(postId, -1);
 
         return LikeResponse.builder()
                 .memberId(member.getId())
