@@ -52,11 +52,11 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         if (isExistingUser) {
             // 기존 회원
-            response.sendRedirect("http://localhost:3000/landing/authcallback");
+            response.sendRedirect("http://localhost:3000/map");
         }
         else {
             // 신규 회원
-            response.sendRedirect("http://localhost:3000/new-user"); // todo 새로운 정보 안 썼을 경우 다시 이 쪽으로 리디렉션 시키기?
+            response.sendRedirect("http://localhost:3000/signup"); // todo 새로운 정보 안 썼을 경우 다시 이 쪽으로 리디렉션 시키기?
         }
 
     }
