@@ -339,6 +339,7 @@ public class PostService {
     private String getSortedBusinessHours(Post post) {
         DayOfWeek today = LocalDate.now().getDayOfWeek();
         List<String> koreanDays = Arrays.asList("월", "화", "수", "목", "금", "토", "일");
+
         //휴일 가져오기
         String[] holidays = post.getHolidays().split(",");
 
