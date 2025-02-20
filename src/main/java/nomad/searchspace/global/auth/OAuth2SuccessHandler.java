@@ -67,7 +67,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         cookie.setMaxAge(maxAge);
         cookie.setPath("/");
 //        cookie.setSecure();
-        cookie.setHttpOnly(true);
+//        cookie.setHttpOnly(true);
         return cookie;
     }
 }
