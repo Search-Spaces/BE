@@ -67,6 +67,7 @@ public class SecurityConfig {
                         .requestMatchers(new AntPathRequestMatcher("/like/**")).hasRole("USER")
                         .requestMatchers(new AntPathRequestMatcher("/review/create")).hasRole("USER")
                         .requestMatchers(new AntPathRequestMatcher("/review/get/**")).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher("/map")).permitAll()
                         .requestMatchers(new AntPathRequestMatcher("/post/delete/**")).hasRole("ADMIN")
                         .requestMatchers(new AntPathRequestMatcher("/review/delete/**")).hasRole("ADMIN")
                         .anyRequest().permitAll() // Todo 임시로 퍼밋 올
