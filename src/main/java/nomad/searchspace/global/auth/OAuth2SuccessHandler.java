@@ -46,8 +46,10 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         String refreshToken = jwtUtil.createRefreshToken(userEmail);
 
         // 토큰을 쿠키를 통하여 응답
-        response.addCookie(createCookie("access", accessToken, 3600));
-        response.addCookie(createCookie("refresh", refreshToken, 1209600));
+//        response.addCookie(createCookie("access", accessToken, 3600));
+//        response.addCookie(createCookie("refresh", refreshToken, 1209600));
+        addCookieWithSameSite(response, "access", accessToken, 3600);
+        addCookieWithSameSite(response, "refresh", refreshToken, 1209600);
         response.setStatus(HttpServletResponse.SC_OK);
 
         if (isExistingUser) {
@@ -61,13 +63,11 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
     }
 
-    // 쿠키 생성 메서드
-    private Cookie createCookie(String key, String value, int maxAge) {
-        Cookie cookie = new Cookie(key, value);
-        cookie.setMaxAge(maxAge);
-        cookie.setPath("/");
-        cookie.setHttpOnly(true);
-        cookie.setSecure(true);
-        return cookie;
+    private void addCookieWithSameSite(HttpServletResponse response, String key, String value, int maxAge) {
+        String cookie = String.format(
+                "%s=%s; Max-Age=%d; Path=/; HttpOnly; Secure; SameSite=None",
+                key, value, maxAge
+        );
+        response.addHeader("Set-Cookie", cookie);
     }
 }
