@@ -46,28 +46,28 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         String refreshToken = jwtUtil.createRefreshToken(userEmail);
 
         // 토큰을 쿠키를 통하여 응답
-        response.addCookie(createCookie("access", accessToken, 3600));
-        response.addCookie(createCookie("refresh", refreshToken, 1209600));
+//        response.addCookie(createCookie("access", accessToken, 3600));
+//        response.addCookie(createCookie("refresh", refreshToken, 1209600));
+        addCookieWithSameSite(response, "access", accessToken, 3600);
+        addCookieWithSameSite(response, "refresh", refreshToken, 1209600);
         response.setStatus(HttpServletResponse.SC_OK);
 
         if (isExistingUser) {
             // 기존 회원
-            response.sendRedirect("http://searchspace.store/map");
+            response.sendRedirect("https://searchspace.store/map");
         }
         else {
             // 신규 회원
-            response.sendRedirect("http://searchspace.store/signup"); // todo 새로운 정보 안 썼을 경우 다시 이 쪽으로 리디렉션 시키기?
+            response.sendRedirect("https://searchspace.store/signup"); // todo 새로운 정보 안 썼을 경우 다시 이 쪽으로 리디렉션 시키기?
         }
 
     }
 
-    // 쿠키 생성 메서드
-    private Cookie createCookie(String key, String value, int maxAge) {
-        Cookie cookie = new Cookie(key, value);
-        cookie.setMaxAge(maxAge);
-        cookie.setPath("/");
-//        cookie.setSecure();
-        cookie.setHttpOnly(true);
-        return cookie;
+    private void addCookieWithSameSite(HttpServletResponse response, String key, String value, int maxAge) {
+        String cookie = String.format(
+                "%s=%s; Max-Age=%d; Path=/; HttpOnly; Secure; SameSite=None",
+                key, value, maxAge
+        );
+        response.addHeader("Set-Cookie", cookie);
     }
 }
