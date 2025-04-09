@@ -1,7 +1,7 @@
 package nomad.searchspace.domain.post.entity;
 
     public enum PostType {
-        CAFE,   // 스터디룸
-        ROOM   // 카페
+        CAFE,   // 카페
+        ETC  // 기타 공간
     }
 
