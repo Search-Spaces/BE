@@ -89,7 +89,7 @@ public class JWTController {
         Cookie cookie = new Cookie(key, value);
         cookie.setMaxAge(maxAge);
         cookie.setPath("/");
-//        cookie.setSecure();
+        cookie.setSecure(true);
         cookie.setHttpOnly(true);
         return cookie;
     }
