@@ -50,6 +50,9 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 //        response.addCookie(createCookie("refresh", refreshToken, 1209600));
         addCookieWithSameSite(response, "access", accessToken, 3600);
         addCookieWithSameSite(response, "refresh", refreshToken, 1209600);
+
+        response.setHeader("Authorization", "Bearer " + accessToken);
+        response.setHeader("Refresh-Token", refreshToken);
         response.setStatus(HttpServletResponse.SC_OK);
 
         if (isExistingUser) {
